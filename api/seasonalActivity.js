@@ -4,7 +4,7 @@ var util = require('../controllers/utilities');
 
 function convertItemsUsed(items) {
     if (items) return items.split(",");
-    return ""
+    return items;
 }
 
 function createCompliantObjectFrom(req) {
@@ -22,7 +22,12 @@ function createCompliantObjectFrom(req) {
 module.exports = {
 
     covenantData: function (req, res) {
-        // all data for a gven covenant
+        // all data for a given magus
+        var magus = req.params.magus;
+        Season.find({magus: magus}, function(err, records) {
+            if (err) util.sendJsonResponse(res, 400, err);
+            util.sendJsonResponse(res, 200, records);
+        });
     },
     updateSeason: function (req, res) {
         // modify a given record
@@ -31,7 +36,8 @@ module.exports = {
         // delete a given record
     },
     addSeason: function (req, res) {
-        Season.create(createCompliantObjectFrom(req), function(err, newRecord) {
+        var newSeason = createCompliantObjectFrom(req);
+        Season.create(newSeason, function(err, newRecord) {
             if (err) util.sendJsonResponse(res, 400, err);
             util.sendJsonResponse(res, 200, newRecord);
         });

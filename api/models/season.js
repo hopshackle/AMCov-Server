@@ -10,6 +10,8 @@ var seasonSchema = new mongoose.Schema({
     serviceForMagus: String
 });
 
+seasonSchema.index({ magus: 1, year: 1, season: 1 }, { unique: true })
+
 var Season = mongoose.model('Season', seasonSchema);
 
 module.exports = Season;

@@ -25,8 +25,11 @@ module.exports = {
         // all data for a given magus
         var magus = req.params.magus;
         Season.find({ magus: magus }, function (err, records) {
-            if (err) util.sendJsonResponse(res, 400, err);
-            util.sendJsonResponse(res, 200, records);
+            if (err) {
+                util.sendJsonResponse(res, 400, err);
+            } else {
+                util.sendJsonResponse(res, 200, records);
+            }
         });
     },
     updateSeason: function (req, res) {
@@ -34,33 +37,56 @@ module.exports = {
         // first we verify that the magus parameter is compatible with the seasonal activity
         Season.findById(req.params.seasonID)
             .exec(function (err, recordToUpdate) {
-                if (err) util.sendJsonResponse({ message: "Season ID not found" }, 404, err);
+                if (err) {
+                    util.sendJsonResponse(res, 404, err);
+                    return;
+                }
+                if (!recordToUpdate) {
+                    util.sendJsonResponse(res, 400, { message: "Activity for season does not exist" });
+                    return;
+                }
                 if (recordToUpdate.magus === req.params.magus) {
                     // we never change year, season or magus on an existing record
-                    console.log(req.body);
                     recordToUpdate.description = req.body.description;
                     recordToUpdate.isService = req.body.isService;
                     recordToUpdate.itemsUsed = convertItemsUsed(req.body.itemsUsed);
                     recordToUpdate.serviceForMagus = req.body.serviceForMagus;
-                    console.log(recordToUpdate);
                     recordToUpdate.save(function (err, updatedRecord) {
-                        if (err) util.sendJsonResponse({ message: "Unexpected error saving changes" }, 400, err);
-                        util.sendJsonResponse(res, 200, updatedRecord);
+                        if (err) {
+                            util.sendJsonResponse(res, 400, err);
+                            return;
+                        }
+                        return util.sendJsonResponse(res, 200, updatedRecord);
                     });
                 } else {
-                    util.sendJsonResponse({ message: "Incorrect Magus for season" }, 400, err);
+                    return util.sendJsonResponse(res, 400, { message: "Incorrect Magus for seasonal activity" });
                 }
 
             });
     },
     deleteSeason: function (req, res) {
         // delete a given record
+        Season.findById(req.params.seasonID)
+            .exec(function (err, recordToRemove) {
+                if (err) return util.sendJsonResponse(res, 404, err);
+                if (!recordToRemove) return util.sendJsonResponse(res, 400, { message: "Activity for season does not exist" });
+                if (recordToRemove.magus === req.params.magus) {
+                    console.log(recordToRemove);
+                    recordToRemove.remove(function (err, updatedRecord) {
+                        if (err) return util.sendJsonResponse(res, 400, err);
+                        return util.sendJsonResponse(res, 200, updatedRecord);
+                    });
+                } else {
+                    return util.sendJsonResponse(res, 400, { message: "Incorrect Magus for seasonal activity" });
+                }
+
+            });
     },
     addSeason: function (req, res) {
         var newSeason = createCompliantObjectFrom(req);
         Season.create(newSeason, function (err, newRecord) {
-            if (err) util.sendJsonResponse(res, 400, err);
-            util.sendJsonResponse(res, 200, newRecord);
+            if (err) return util.sendJsonResponse(res, 400, err);
+            return util.sendJsonResponse(res, 200, newRecord);
         });
     }
 

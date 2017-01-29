@@ -21,15 +21,19 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 
 app.use('/api', api);
-app.use('/', index);
+// app.use('/', index);
 
 /**
  * Development Settings
  */
-if (app.get('env') === 'development') {
+var environment = app.get('env').trim();
+if (environment === 'development') {
+    console.log("In development mode - using " + path.join(__dirname, '../am-client/'));
     // This will change in production since we'll be using the public folder
+    // This covers serving up the index page and the JS files
+    // in production these will all be munged together by Grunt workflow
+    // but in test we need to account for the variety of locations they may be in
     app.use(express.static(path.join(__dirname, '../am-client')));
-    // This covers serving up the index page
     app.use(express.static(path.join(__dirname, '../am-client/.tmp')));
     app.use(express.static(path.join(__dirname, '../am-client/app')));
 
@@ -46,9 +50,10 @@ if (app.get('env') === 'development') {
 /**
  * Production Settings
  */
-if (app.get('env') === 'production') {
-
-    // changes it to use the optimized version for production
+if (environment === 'production') {
+    console.log("In production mode - using public");
+    // changes it to use the optimized version for 
+    console.log(path.join(__dirname, 'public'));
     app.use(express.static(path.join(__dirname, 'public')));
 
     // production error handler

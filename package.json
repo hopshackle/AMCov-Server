@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "set NODE_ENV=production && node ./bin/www",
-    "test": "set NODE_ENV=development && node ./bin/www"
+    "test": "cd ../am-client && npm run build-css && cd ../am-server && set NODE_ENV=development && node ./bin/www"
   },
   "dependencies": {
     "body-parser": "~1.15.2",

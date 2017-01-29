@@ -34,7 +34,7 @@ if (environment === 'development') {
     // in production these will all be munged together by Grunt workflow
     // but in test we need to account for the variety of locations they may be in
     app.use(express.static(path.join(__dirname, '../am-client')));
-    app.use(express.static(path.join(__dirname, '../am-client/.tmp')));
+//    app.use(express.static(path.join(__dirname, '../am-client/.tmp')));
     app.use(express.static(path.join(__dirname, '../am-client/app')));
 
     // Error Handling

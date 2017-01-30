@@ -7,8 +7,6 @@ var bodyParser = require('body-parser');
 
 require('./db');    // sets database access
 
-var index = require('./routes/index');
-var users = require('./routes/users');
 var api = require('./routes/api');
 
 var app = express();
@@ -21,7 +19,6 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 
 app.use('/api', api);
-// app.use('/', index);
 
 /**
  * Development Settings

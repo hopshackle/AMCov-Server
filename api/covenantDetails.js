@@ -5,13 +5,13 @@ var util = require('../controllers/utilities');
 module.exports = {
 
     covenantData: function (req, res) {
-        // all data for a given magus
+        // all data for a given covenant
         var covenant = req.params.covenant;
         Covenant.find({ name: covenant }, function (err, records) {
             if (err || records.length == 0) {
                 util.sendJsonResponse(res, 400, err);
             } else {
-                util.sendJsonResponse(res, 200, records);
+                util.sendJsonResponse(res, 200, records[0]);
             }
         });
     },

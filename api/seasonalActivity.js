@@ -2,11 +2,6 @@
 var Season = require('./models/season');
 var util = require('../controllers/utilities');
 
-function convertItemsUsed(items) {
-    if (items) return items.split(",");
-    return items;
-}
-
 function createCompliantObjectFrom(req) {
     return {
         year: parseInt(req.body.year),
@@ -14,14 +9,14 @@ function createCompliantObjectFrom(req) {
         magus: req.body.magus,
         description: req.body.description,
         isService: req.body.isService,
-        itemsUsed: convertItemsUsed(req.body.itemsUsed),
+        itemsUsed: convertToArray(req.body.itemsUsed, ","),
         serviceForMagus: req.body.serviceForMagus
     }
 }
 
 module.exports = {
 
-    covenantData: function (req, res) {
+    getSeasonData: function (req, res) {
         // all data for a given magus
         var magus = req.params.magus;
         Season.find({ magus: magus }, function (err, records) {
@@ -49,7 +44,7 @@ module.exports = {
                     // we never change year, season or magus on an existing record
                     recordToUpdate.description = req.body.description;
                     recordToUpdate.isService = req.body.isService;
-                    recordToUpdate.itemsUsed = convertItemsUsed(req.body.itemsUsed);
+                    recordToUpdate.itemsUsed = convertToArray(req.body.itemsUsed, ",");
                     recordToUpdate.serviceForMagus = req.body.serviceForMagus;
                     recordToUpdate.save(function (err, updatedRecord) {
                         if (err) {

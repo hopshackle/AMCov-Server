@@ -28,7 +28,7 @@ module.exports = {
                 var recordToUpdate = records[0];
                 recordToUpdate.name = req.body.name;
                 recordToUpdate.description = req.body.description;
-                recordToUpdate.members = convertToArray(req.body.members, "|");
+                recordToUpdate.members = util.convertToArray(req.body.members, "|");
                 recordToUpdate.save(function (err, updatedRecord) {
                     if (err) {
                         return util.sendJsonResponse(res, 400, err);
@@ -41,9 +41,9 @@ module.exports = {
         var newCovenant = {
             name: req.body.name,
             description: req.body.description,
-            members: convertToArray(req.body.members, "|")
+            members: util.convertToArray(req.body.members, "|")
         };
-        Season.create(newSeason, function (err, newRecord) {
+        Covenant.create(newCovenant, function (err, newRecord) {
             if (err) return util.sendJsonResponse(res, 400, err);
             return util.sendJsonResponse(res, 200, newRecord);
         });

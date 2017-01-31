@@ -9,7 +9,7 @@ function createCompliantObjectFrom(req) {
         magus: req.body.magus,
         description: req.body.description,
         isService: req.body.isService,
-        itemsUsed: convertToArray(req.body.itemsUsed, ","),
+        itemsUsed: util.convertToArray(req.body.itemsUsed, ","),
         serviceForMagus: req.body.serviceForMagus
     }
 }
@@ -44,7 +44,7 @@ module.exports = {
                     // we never change year, season or magus on an existing record
                     recordToUpdate.description = req.body.description;
                     recordToUpdate.isService = req.body.isService;
-                    recordToUpdate.itemsUsed = convertToArray(req.body.itemsUsed, ",");
+                    recordToUpdate.itemsUsed = util.convertToArray(req.body.itemsUsed, ",");
                     recordToUpdate.serviceForMagus = req.body.serviceForMagus;
                     recordToUpdate.save(function (err, updatedRecord) {
                         if (err) {

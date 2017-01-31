@@ -31,16 +31,13 @@ if (environment === 'development') {
     // in production these will all be munged together by Grunt workflow
     // but in test we need to account for the variety of locations they may be in
     app.use(express.static(path.join(__dirname, '../am-client')));
-//    app.use(express.static(path.join(__dirname, '../am-client/.tmp')));
+    //    app.use(express.static(path.join(__dirname, '../am-client/.tmp')));
     app.use(express.static(path.join(__dirname, '../am-client/app')));
 
     // Error Handling
-    app.use(function(err, req, res, next) {
+    app.use(function (err, req, res, next) {
         res.status(err.status || 500);
-        res.render('error', {
-            message: err.message,
-            error: err
-        });
+        res.json({message: err.message});
     });
 }
 
@@ -55,7 +52,7 @@ if (environment === 'production') {
 
     // production error handler
     // no stacktraces leaked to user
-    app.use(function(err, req, res, next) {
+    app.use(function (err, req, res, next) {
         res.status(err.status || 500);
         res.render('error', {
             message: err.message,

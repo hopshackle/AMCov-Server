@@ -9,7 +9,7 @@ function createCompliantObjectFrom(req) {
         magus: req.body.magus,
         description: req.body.description,
         isService: req.body.isService,
-        itemsUsed: util.convertToArray(req.body.itemsUsed, ","),
+        itemsUsed: util.convertToArray(req.body.itemsUsed, "|"),
         serviceForMagus: req.body.serviceForMagus
     }
 }

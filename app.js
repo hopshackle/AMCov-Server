@@ -33,7 +33,7 @@ if (environment === 'development') {
     app.use(express.static(path.join(__dirname, '../am-client')));
     //    app.use(express.static(path.join(__dirname, '../am-client/.tmp')));
     app.use(express.static(path.join(__dirname, '../am-client/app')));
-
+    app.set('dbUri', 'mongodb://localhost/ArsMagicaCovenants');
     // Error Handling
     app.use(function (err, req, res, next) {
         res.status(err.status || 500);
@@ -49,7 +49,7 @@ if (environment === 'production') {
     // changes it to use the optimized version for 
     console.log(path.join(__dirname, 'public'));
     app.use(express.static(path.join(__dirname, 'public')));
-
+    app.set('dbUri', 'mongodb://localhost/ArsMagicaCovenants');
     // production error handler
     // no stacktraces leaked to user
     app.use(function (err, req, res, next) {

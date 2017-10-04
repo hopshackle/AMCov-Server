@@ -1,10 +1,14 @@
 {
   "name": "am-server",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "private": true,
   "scripts": {
     "start": "set NODE_ENV=production && node ./bin/www",
     "test": "cd ../am-client && npm run build-css && cd ../am-server && set NODE_ENV=development && node ./bin/www"
+  },
+  "engines": {
+    "node": "~6.9.2",
+    "npm": "~3.10.9"
   },
   "dependencies": {
     "body-parser": "~1.15.2",
@@ -12,7 +16,10 @@
     "cors": "^2.8.1",
     "debug": "~2.2.0",
     "express": "~4.14.0",
+    "express-jwt": "^5.3.0",
+    "express-jwt-authz": "^1.0.0",
     "jade": "~1.11.0",
+    "jwks-rsa": "^1.2.0",
     "mongoose": "^4.7.7",
     "morgan": "~1.7.0",
     "serve-favicon": "~2.3.0"

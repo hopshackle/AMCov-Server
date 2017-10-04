@@ -1,4 +1,4 @@
 var mongoose = require('mongoose');
 
-var dbURI = 'mongodb://localhost/ArsMagicaCovenants';
+var dbURI = app.get('dbUri');
 mongoose.connect(dbURI);

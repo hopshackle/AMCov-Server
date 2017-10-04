@@ -30,6 +30,7 @@ module.exports = {
     updateSeason: function (req, res) {
         // modify a given record
         // first we verify that the magus parameter is compatible with the seasonal activity
+
         Season.findById(req.params.seasonID)
             .exec(function (err, recordToUpdate) {
                 if (err) {

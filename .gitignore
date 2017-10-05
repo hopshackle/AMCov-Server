@@ -2,6 +2,5 @@
 /.tmp
 /bower_components
 /.vscode
-/public
 *.log
 .env

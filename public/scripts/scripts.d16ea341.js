@@ -144,7 +144,9 @@ angular.module('amClientApp')
     } else {
       hdr.url = $location.absUrl().split(':')[1].split('#')[0];
     }
-
+    if (hdr.url.endsWith('/')) {
+      hdr.url = hdr.url.substring(0, hdr.url.length-1);
+    }
     if (hdr.url == 'http') {
       hdr.url = 'http://localhost';
     }

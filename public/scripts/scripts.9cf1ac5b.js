@@ -39,7 +39,7 @@ config.$inject = ['angularAuth0Provider',
   'jwtOptionsProvider', 'port', 'callback'];
 
 
-function config(angularAuth0Provider, $locationProvider, $httpProvider, jwtOptionsProvider, port, callbackURI) {
+function config(angularAuth0Provider, $locationProvider, $httpProvider, jwtOptionsProvider, callbackURI) {
   // Initialization for the angular-auth0 library
 
   console.log("Using " + callbackURI);

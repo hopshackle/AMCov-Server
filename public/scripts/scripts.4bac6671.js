@@ -128,17 +128,23 @@ angular.module('amClientApp')
     var main = this;
     main.fghfh = '';
   })
-  .controller('HeaderCtrl', ['hdr', 'authService', function(hdr, authService) {
+  .controller('HeaderCtrl', ['hdr', 'authService', function (hdr, authService) {
     var header = this;
     header.hdr = hdr;
     header.auth = authService;
   }])
-  .service('hdr', ['$location', function($location) {
+  .service('hdr', ['$location', function ($location) {
     // put this as a service, so that all pages can easily update where the user
     // has navigated to
     var hdr = this;
     hdr.port = $location.port();
-    hdr.url = $location.absUrl().split(':')[0].split('#')[0];
+    var numberOfColons = $location.absUrl().split(':').length;
+    if (numberOfColons == 1) {
+      hdr.url = $location.absUrl().split(':')[0].split('#')[0];
+    } else {
+      hdr.url = $location.absUrl().split(':')[1].split('#')[0];
+    }
+
     if (hdr.url == 'http') {
       hdr.url = 'http://localhost';
     }

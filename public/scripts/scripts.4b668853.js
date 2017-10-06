@@ -39,10 +39,9 @@ config.$inject = ['angularAuth0Provider',
   'jwtOptionsProvider', 'port', 'callback'];
 
 
-function config(angularAuth0Provider, $locationProvider, $httpProvider, jwtOptionsProvider, port, callback) {
+function config(angularAuth0Provider, $locationProvider, $httpProvider, jwtOptionsProvider, port, callbackURI) {
   // Initialization for the angular-auth0 library
 
-  var callbackURI = callback + ':' + port + '/#!/callback';
   console.log("Using " + callbackURI);
 
   angularAuth0Provider.init({
@@ -111,8 +110,7 @@ angular.module('amClientApp')
     
       angular
         .module('amClientApp')
-        .constant('port', 5000)
-        .constant('callback', 'https://arsmagica-covenants.herokuapp.com');
+        .constant('callbackURI', 'https://arsmagica-covenants.herokuapp.com/#!/callback');
 })();
 'use strict';
 

@@ -36,7 +36,7 @@ function run(authService) {
 config.$inject = ['angularAuth0Provider',
   '$locationProvider',
   '$httpProvider',
-  'jwtOptionsProvider', 'port', 'callback'];
+  'jwtOptionsProvider', 'callbackURI'];
 
 
 function config(angularAuth0Provider, $locationProvider, $httpProvider, jwtOptionsProvider, callbackURI) {

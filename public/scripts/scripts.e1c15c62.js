@@ -112,7 +112,7 @@ angular.module('amClientApp')
       angular
         .module('amClientApp')
         .constant('port', 5000)
-        .constant('callback', 'http://localhost');
+        .constant('callback', 'https://arsmagica-covenants.herokuapp.com');
 })();
 'use strict';
 

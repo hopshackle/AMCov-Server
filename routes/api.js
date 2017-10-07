@@ -23,13 +23,17 @@ const checkJwt = jwt({
     issuer: `https://hopshackle.eu.auth0.com/`,
     algorithms: ['RS256']
 });
-var authError = function (req, res, next) {
-    console.log("In AuthError - hopefully validated");
+
+var logStatus = function(req, res, next) {
+    console.log(req.user);
     next();
 }
 
-router.put('/foedus/:magus/:seasonID', checkJwt, jwtAuthz(['update:foedus']), authError);
-router.post('/foedus/', checkJwt, jwtAuthz(['update:foedus']), authError);
+router.put('/foedus/:magus/:seasonID', checkJwt, logStatus, jwtAuthz(['update:foedus']));
+router.post('/foedus/', checkJwt, logStatus, jwtAuthz(['update:foedus']));
+
+router.put('/aoide/:magus/:seasonID', checkJwt, logStatus, jwtAuthz(['update:aoide']));
+router.post('/aoide/', checkJwt, logStatus, jwtAuthz(['update:aoide']));
 
 /* Responsible for routing to core api calls */
 router.get('/:covenant', covenantApi.covenantData);  // all data for a given covenant

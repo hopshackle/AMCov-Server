@@ -29,21 +29,25 @@ var logStatus = function(req, res, next) {
     next();
 }
 
+// First we check access rights (currently set at covenant level)
+// These call next(), so will pass control back here so post-authorisation
+// we fall through to the actual api call
 router.put('/foedus/:magus/:seasonID', checkJwt, logStatus, jwtAuthz(['update:foedus']));
-router.post('/foedus/', checkJwt, logStatus, jwtAuthz(['update:foedus']));
+router.post('/foedus/:magus', checkJwt, logStatus, jwtAuthz(['update:foedus']));
 
 router.put('/aoide/:magus/:seasonID', checkJwt, logStatus, jwtAuthz(['update:aoide']));
-router.post('/aoide/', checkJwt, logStatus, jwtAuthz(['update:aoide']));
+router.post('/aoide/:magus', checkJwt, logStatus, jwtAuthz(['update:aoide']));
 
 /* Responsible for routing to core api calls */
 router.get('/:covenant', covenantApi.covenantData);  // all data for a given covenant
 router.put('/:covenant', covenantApi.updateCovenant); // modify a given record
 router.post('/', covenantApi.addCovenant); // add details of a new covenant
+router.get('/', covenantApi.listAllCovenants);  // get list of all covenants
 
 router.get('/:cov/:magus', seasonApi.getSeasonData);  // all data for a given magu
 router.put('/:cov/:magus/:seasonID', seasonApi.updateSeason); // modify a given record
 router.delete('/:cov/:magus/:seasonID', seasonApi.deleteSeason); // delete a given record
-router.post('/:cov/', seasonApi.addSeason); // add details of a new season
+router.post('/:cov/:magus', seasonApi.addSeason); // add details of a new season
 
 // if we get here, then an error has occurred, as the api call is not supported
 router.all('/', function (req, res) {

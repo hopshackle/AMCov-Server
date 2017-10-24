@@ -15,6 +15,20 @@ module.exports = {
             }
         });
     },
+    listAllCovenants: function(req, res) {
+        // a simple list of the available covenants
+        Covenant.find({}, function (err, records) {
+            if (err || records.length == 0) {
+                util.sendJsonResponse(res, 400, err);
+            } else {
+                var list = [];
+                for (var rec of records) {
+                    list.push(rec.name);
+                }
+                util.sendJsonResponse(res, 200, list);
+            }
+        });
+    },
     updateCovenant: function (req, res) {
         // modify a given record
         Covenant.find({ name: covenant })

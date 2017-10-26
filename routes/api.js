@@ -38,11 +38,14 @@ router.post('/foedus/:magus', checkJwt, logStatus, jwtAuthz(['update:foedus']));
 router.put('/aoide/:magus/:seasonID', checkJwt, logStatus, jwtAuthz(['update:aoide']));
 router.post('/aoide/:magus', checkJwt, logStatus, jwtAuthz(['update:aoide']));
 
+router.delete('/:covenant', checkJwt, logStatus, jwtAuthz(['delete:covenant']));
+
 /* Responsible for routing to core api calls */
 router.get('/:covenant', covenantApi.covenantData);  // all data for a given covenant
 router.put('/:covenant', covenantApi.updateCovenant); // modify a given record
 router.post('/', covenantApi.addCovenant); // add details of a new covenant
 router.get('/', covenantApi.listAllCovenants);  // get list of all covenants
+router.delete('/:covenant', covenantApi.deleteCovenant);
 
 router.get('/:cov/:magus', seasonApi.getSeasonData);  // all data for a given magu
 router.put('/:cov/:magus/:seasonID', seasonApi.updateSeason); // modify a given record

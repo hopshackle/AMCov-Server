@@ -51,7 +51,7 @@ function config(angularAuth0Provider, $locationProvider, $httpProvider, jwtOptio
     audience: 'arsmagica.uk',
     //    redirectUri: 'http://localhost:5000/#!/callback',
     redirectUri: callbackURI,
-    scope: 'openid update:foedus'
+    scope: 'openid'
   });
 
 
@@ -85,6 +85,16 @@ angular.module('amClientApp')
         controller: 'MainCtrl',
         controllerAs: 'main'
       })
+      .when('/addCovenant', {
+        templateUrl: 'views/addCovenant.html',
+        controller: 'NewCovCtrl',
+        controllerAs: 'vm'
+      })
+      .when('/:covenant/updateStatic', {
+        templateUrl: 'views/addCovenant.html',
+        controller: 'NewCovCtrl',
+        controllerAs: 'vm'
+      })
       .when('/callback', {
         templateUrl: 'views/callback.html',
         controller: 'MainCtrl',
@@ -110,7 +120,9 @@ angular.module('amClientApp')
     
       angular
         .module('amClientApp')
-        .constant('callbackURI', 'https://arsmagica-covenants.herokuapp.com/#!/callback');
+  //      .constant('callbackURI', 'https://arsmagica-covenants.herokuapp.com/#!/callback');
+  //      .constant('callbackURI', 'http://localhost:3000/#!/callback');
+        .constant('callbackURI', 'http://localhost:5000/#!/callback');
 })();
 'use strict';
 
@@ -122,10 +134,15 @@ angular.module('amClientApp')
  * Controller of the amClientApp
  */
 angular.module('amClientApp')
-  .controller('MainCtrl', function () {
+  .controller('MainCtrl', ['db', function (db) {
     var main = this;
-    main.fghfh = '';
-  })
+    main.covenantList = [];
+    db.getCovenantList(function (list) {
+      for (var rec of list) {
+        main.covenantList.push(rec);
+      }
+    });
+  }])
   .controller('HeaderCtrl', ['hdr', 'authService', function (hdr, authService) {
     var header = this;
     header.hdr = hdr;
@@ -143,7 +160,7 @@ angular.module('amClientApp')
       hdr.url = $location.absUrl().split(':')[1].split('#')[0];
     }
     if (hdr.url.endsWith('/')) {
-      hdr.url = hdr.url.substring(0, hdr.url.length-1);
+      hdr.url = hdr.url.substring(0, hdr.url.length - 1);
     }
     if (hdr.url == 'http') {
       hdr.url = 'http://localhost';
@@ -157,7 +174,13 @@ angular.module('amClientApp')
     hdr.setCovenant = function (covenant) {
       hdr.covenantSelected = true;
       hdr.covenant = covenant;
+      if (!covenant || covenant == "") {
+        hdr.covenantSelected = false;
+      }
     };
+
+    // extract current list of covenants from server
+
   }]);
 
 
@@ -166,7 +189,7 @@ angular.module('amClientApp')
     .service('util', util);
 
 function util() {
-    
+
     return {
 
         save: function (key, value) {
@@ -174,13 +197,22 @@ function util() {
         },
         load: function (key, defaultValue) {
             var retValue = window.localStorage[key];
-            if (retValue) return retValue;
+            if (retValue) {
+                return retValue;
+            }
             return defaultValue;
         },
         convertToArray: function (items, separator) {
-            console.log(items);
-            if (items) return items.split(separator);
-            return items;
+            if (items) {
+                return items.split(separator);
+            }
+            return [];
+        },
+        arrayToString: function (items, separator) {
+            if (items) {
+                return items.join(separator);
+            }
+            return "";
         },
         seasonToNumber: function (seasonAsString) {
             switch (seasonAsString) {
@@ -231,10 +263,10 @@ function util() {
                 for (var s = 1; s <= 4; s++) {
                     var key = y + "-" + s;
                     seasonKeys.push(key);
-                    var seasonRecord = { year: y, season: this.seasonToString(s) }
-                    for (var magusName of covenant.allMagi) {
+                    var seasonRecord = { year: y, season: this.seasonToString(s) };
+                    for (var magusName of covenant.members) {
                         seasonRecord[magusName] = {};
-                        seasonRecord[magusName].prettyText = function () { return "---" };
+                        seasonRecord[magusName].prettyText = function () { return "---"; };
                     }
                     seasonMap.set(key, seasonRecord);
                 }
@@ -244,7 +276,7 @@ function util() {
             retValue.seasonMap = seasonMap;
             return retValue;
         }
-    }
+    };
 }
 
 
@@ -257,7 +289,10 @@ function db(util, $resource, $q, hdr) {
     var baseURL = hdr.url + ':' + hdr.port + '/api';
     console.log("Using " + baseURL);
 
- //   var baseURL = "http://localhost\:5000/api";
+    //   var baseURL = "http://localhost\:5000/api";
+    var covList_db = $resource(baseURL, null, {
+        'update': { method: 'PUT' }
+    });
     var cov_db = $resource(baseURL + "/:covenant", null, {
         'update': { method: 'PUT' }
     });
@@ -278,22 +313,38 @@ function db(util, $resource, $q, hdr) {
             data.magus = magus;
             data.year = year;
             data.season = util.seasonToNumber(season);
-            data.itemsUsed = data.itemsUsed.join("|");
+            data.itemsUsed = util.arrayToString(data.itemsUsed, "|");
             if (data.objId) {
                 season_db.update({ covenant: covenant, magus: magus, objId: data.objId }, JSON.stringify(data), callback, onError);
             } else {
-                season_db.save({ covenant: covenant }, JSON.stringify(data), callback, onError);
+                season_db.save({ covenant: covenant, magus: magus }, JSON.stringify(data), callback, onError);
             }
         },
-        getCovenantDetails: function (c, callback) {
-            var covenantDetails = {};
-            cov_db.get({ covenant: c }, function (covRecord) {
-                covenantDetails.covenantName = covRecord.name;
-                covenantDetails.description = covRecord.description;
-                covenantDetails.allMagi = covRecord.members;
-                callback(covenantDetails);
+        getCovenantList: function (callback) {
+            covList_db.query({}, function (covList) {
+                callback(covList);
             });
-            return covenantDetails;
+        },
+        insertCovenant: function (data, callback, onError) {
+            data.members = util.arrayToString(data.members, "|");
+            data.items = util.arrayToString(data.items, "|");
+            console.log(data);
+            covList_db.save({}, JSON.stringify(data), callback, onError);
+        },
+        amendCovenant: function (data, callback, onError) {
+            data.members = util.arrayToString(data.members, "|");
+            data.items = util.arrayToString(data.items, "|");
+            console.log(data);
+            cov_db.update({ covenant: data.name }, JSON.stringify(data), callback, onError);
+        },
+        deleteCovenant: function (covName, callback, onError) {
+            console.log(covName);
+            cov_db.delete({covenant: covName}, callback, onError);
+        },
+        getCovenantDetails: function (c, callback) {
+            cov_db.get({ covenant: c }, function (covRecord) {
+                callback(covRecord);
+            });
         },
         getMagusData: function (covenant, magus, callback) {
             var apiParams = { covenant: covenant, magus: magus };
@@ -307,10 +358,10 @@ function db(util, $resource, $q, hdr) {
             var seasons = [];
             var promises = [];
             var db = this;
-            angular.forEach(covenant.allMagi, function (m) {
+            angular.forEach(covenant.members, function (m) {
                 var newPromise = $q.defer();
                 promises.push(newPromise.promise);
-                db.getMagusData(covenant.covenantName, m, function (seasonData) {
+                db.getMagusData(covenant.name, m, function (seasonData) {
                     for (var j = 0; j < seasonData.length; j++) {
                         var key = seasonData[j].year + "-" + seasonData[j].season;
                         if (seasonData[j].year <= endYear && seasonData[j].year >= startYear) {
@@ -327,7 +378,7 @@ function db(util, $resource, $q, hdr) {
                 for (var k of seasonKeys) {
                     seasons.push(seasonMap.get(k));
                 }
-                if (callback) {callback(seasons);}
+                if (callback) { callback(seasons); }
             });
             return seasons;
         }
@@ -352,14 +403,14 @@ angular.module('amClientApp')
                     { field: "year", width: 60, allowCellFocus: false },
                     { field: "season", width: 80, allowCellFocus: false }
                 ];
-                for (var i in cov.covenant.allMagi) {
+                for (var i in cov.covenant.members) {
                     if (cov.selected[i]) {
-                        var m = cov.covenant.allMagi[i];
+                        var m = cov.covenant.members[i];
                         cov.columnDefs.push({
                             allowCellFocus: true,
                             displayName: m, field: m + ".prettyText()", width: "*",
                             cellTemplate: 'templates/seasonCellTemplate.html',
-                            cellClass: function (grid, row, col, ri, rc) {
+                            cellClass: function (grid, row, col) {
                                 var result = "";
                                 if (row.entity[col.displayName].isService) {
                                     result = 'covService';
@@ -384,14 +435,15 @@ angular.module('amClientApp')
                 util.save($routeParams.covenant + "_sy", cov.startYear);
                 util.save($routeParams.covenant + "_ey", cov.endYear);
                 util.save($routeParams.covenant + "_ms", JSON.stringify(cov.selected));
-                cov.seasons = db.getSeasonData(cov.covenant, cov.startYear, cov.endYear, function (data) {
+                cov.seasons = db.getSeasonData(cov.covenant, cov.startYear, cov.endYear, function () {
                     cov.refreshColumns();
                 });
             };
 
-            cov.covenant = db.getCovenantDetails($routeParams.covenant, function (covenant) {
+            db.getCovenantDetails($routeParams.covenant, function (covenant) {
+                cov.covenant = covenant;
                 if (Object.keys(cov.selected).length == 0) {
-                    for (var i in cov.covenant.allMagi) {
+                    for (var i in cov.covenant.members) {
                         cov.selected[i] = true;
                     }
                 }
@@ -400,15 +452,12 @@ angular.module('amClientApp')
             });
 
             cov.selectAll = function (allOn) {
-                for (var i in cov.covenant.allMagi) {
+                for (var i in cov.covenant.members) {
                     cov.selected[i] = allOn;
                 }
             };
 
             cov.editCell = function (grid, row, col) {
-                var year = row.entity.year;
-                var season = row.entity.season;
-                var seasonAsInt = util.seasonToNumber(season);
                 $uibModal.open({
                     templateUrl: 'templates/edit-modal.html',
                     controller: 'SeasonEditController',
@@ -422,7 +471,7 @@ angular.module('amClientApp')
                         covenant: function () { return cov.covenant; }
                     }
                 });
-            }
+            };
         }]);
 'use strict';
 
@@ -445,13 +494,13 @@ angular.module('amClientApp')
 
             scope.close = function () {
                 $uibModalInstance.close();
-            }
+            };
             scope.save = function () {
-                db.writeRecord(covenant.covenantName, magus, year, season, scope.data, function(result) {
+                db.writeRecord(covenant.name, magus, year, season, scope.data, function() {
                     onSave();
                 });
                 $uibModalInstance.close();
-            }
+            };
         }]);
 'use strict';
 
@@ -465,36 +514,41 @@ angular.module('amClientApp')
 
             service.apiRegister = function (gridApi) {
                 service.gridApi = gridApi;
-            }
+            };
 
-            service.covenant = db.getCovenantDetails($routeParams.covenant, function (covenant) {
+            db.getCovenantDetails($routeParams.covenant, function (covenant) {
+                service.covenant = covenant;
                 var allData = [];
                 var promises = [];
 
-                angular.forEach(covenant.allMagi, function (magus) {
+                angular.forEach(covenant.members, function (magus) {
                     // we need to do this inside a function, as JS does not have block-level scopes
                     // and we need to distinguish each promise from the next
                     var promise = $q.defer();
                     promises.push(promise.promise);
 
-                    db.getMagusData(covenant.covenantName, magus, function (magusData) {
+                    db.getMagusData(covenant.name, magus, function (magusData) {
                         var data = {};
                         data.Magus = magus;
                         data.Service = 0;
                         // set zeros for service done for sodales
-                        for (var j in covenant.allMagi) {
-                            data[covenant.allMagi[j]] = 0;
-                            data[covenant.allMagi[j] + "_S"] = 0;
+                        for (var j in covenant.members) {
+                            data[covenant.members[j]] = 0;
+                            data[covenant.members[j] + "_S"] = 0;
                         }
                         if (magusData.length > 0) {
                             data.Seasons = magusData.length;
                             for (var record of magusData) {
                                 if (record.serviceForMagus && record.serviceForMagus != "") {
                                     data[record.serviceForMagus] += 1;
-                                    if (record.isService) data[record.serviceForMagus + "_S"] += 1;
+                                    if (record.isService) {
+                                        data[record.serviceForMagus + "_S"] += 1;
+                                    }
                                     // the _S keeps track of seasons service done for other magi
                                 } else {
-                                    if (record.isService) data.Service += 1;
+                                    if (record.isService) {
+                                        data.Service += 1;
+                                    }
                                 }
                             }
                         } else {
@@ -511,9 +565,10 @@ angular.module('amClientApp')
                     { field: "Magus", width: "*" },
                     { field: "Seasons", width: "*" },
                     { field: "Service", width: "*" }
-                ]
-                for (var i in service.covenant.allMagi) {
-                    var m = service.covenant.allMagi[i];
+                ];
+
+                for (var i in service.covenant.members) {
+                    var m = service.covenant.members[i];
                     service.columnDefs.push({
                         displayName: m, field: m, width: "*"
                     });
@@ -523,11 +578,13 @@ angular.module('amClientApp')
                 // Now wait for all the db queries on individual magi to return
                 $q.all(promises).then(function () {
                     // Now we can take account of seasons owed
-                    for (var i in service.covenant.allMagi) {
-                        var magus1 = service.covenant.allMagi[i];
-                        for (var j in service.covenant.allMagi) {
-                            if (j <= i) continue;
-                            var magus2 = service.covenant.allMagi[j];
+                    for (var i in service.covenant.members) {
+                        var magus1 = service.covenant.members[i];
+                        for (var j in service.covenant.members) {
+                            if (j <= i) {
+                                continue;
+                            }
+                            var magus2 = service.covenant.members[j];
                             var oneForTwo = allData[i][magus2];
                             allData[i][magus2] -= allData[j][magus1];
                             // subtract the seasons worked by magus2 for magus 1
@@ -543,6 +600,68 @@ angular.module('amClientApp')
                     service.displayData = allData;
                 });
             });
+        }]);
+'use strict';
+
+angular.module('amClientApp')
+    .controller('NewCovCtrl', ['$routeParams', 'util', 'db', 'hdr',
+        function ($routeParams, util, db, hdr) {
+            var vm = this;
+
+            hdr.message = "";
+            vm.insertMode = true;
+            vm.itemList = "";
+            vm.magiList = "";
+
+            if ($routeParams.covenant && $routeParams.covenant != "") {
+                hdr.setCovenant($routeParams.covenant);
+                vm.insertMode = false;
+                vm.name = $routeParams.covenant;
+                db.getCovenantDetails(vm.name, function (data) {
+                    vm.description = data.description;
+                    vm.magiList = util.arrayToString(data.members, "\n");
+                    vm.itemList = util.arrayToString(data.items, "\n");
+                });
+                hdr.page = 'amendCovenant';
+            } else {
+                vm.insertMode = true;
+                hdr.page = 'addCovenant';
+            }
+
+            var insertCallback = function (res) {
+                // res will be covenant object
+                vm.clear();
+                hdr.message = "Saved " + res.name + " to database successfully";
+            };
+
+            var insertOnError = function (res) {
+                console.log(res);
+                var message = res.data.message ? res.data.message : (res.statusText + " (" + res.status + ")");
+                hdr.message = "Save to database failed: " + message;
+            };
+
+            vm.save = function () {
+                var newCov = {};
+                newCov.name = vm.name;
+                newCov.description = vm.description;
+                newCov.items = vm.itemList.replace(/\r\n/g, "\n").split("\n");
+                newCov.members = vm.magiList.replace(/\r\n/g, "\n").split("\n");
+                if (!vm.insertMode) {
+                    db.amendCovenant(newCov, insertCallback, insertOnError);
+                } else {
+                    db.insertCovenant(newCov, insertCallback, insertOnError);
+                }
+            };
+
+            vm.clear = function () {
+                vm.name = "";
+                vm.description = "";
+                vm.magiList = "";
+            };
+
+            vm.delete = function() {
+                db.deleteCovenant(vm.name, insertCallback, insertOnError);
+            };
         }]);
 (function () {
 
@@ -611,20 +730,33 @@ angular.module('amClientApp')
 angular.module('amClientApp').run(['$templateCache', function($templateCache) {
   'use strict';
 
+  $templateCache.put('views/addCovenant.html',
+    "<div class=\"row\"> <div class=\"col-md-12 form-group\"> <!-- cov.selected is an object, with a numerically named property for each selected item --> <!-- $index is evaluated as \"0\", \"1\", etc. --> <!-- The elements we want in the form are:\r" +
+    "\n" +
+    "            - textbox for name\r" +
+    "\n" +
+    "            - canvas for description\r" +
+    "\n" +
+    "            - list for magi\r" +
+    "\n" +
+    "            --> <p> </p><div class=\"form-horizontal\"> <label for=\"name\">Covenant Name </label> <input id=\"name\" type=\"text\" name=\"name\" required class=\"form-control\" ng-model=\"vm.name\"> <label for=\"description\">Description </label> <textarea id=\"description\" name=\"description\" rows=\"5\" required class=\"form-control\" ng-model=\"vm.description\"></textarea> <label for=\"magi\">List of Magi</label> <textarea id=\"magi\" name=\"magi\" rows=\"15\" required class=\"form-control\" placeholder=\"Please enter one name per line\" ng-model=\"vm.magiList\"></textarea> <div class=\"btn btn-lg btn-default\" ng-click=\"vm.save()\">Submit</div> <div class=\"btn btn-lg btn-default\" ng-click=\"vm.clear()\">Clear</div> <div ng-hide=\"vm.insertMode\" class=\"btn btn-lg btn-danger pull-right\" ng-click=\"vm.delete()\">Delete Covenant</div> </div> <p></p> </div> </div> "
+  );
+
+
   $templateCache.put('views/callback.html',
     "<div class=\"jumbotron\"> <h1>You have logged in successfully</h1> </div> "
   );
 
 
   $templateCache.put('views/covenant.html',
-    "<div class=\"row\"> <div class=\"col-md-6\"> <h2>Covenant of {{cov.covenant.covenantName}}</h2> <p>{{cov.covenant.description}}</p> </div> <div class=\"col-md-6 form-group\"> <!-- cov.selected is an object, with a numerically named property for each selected item --> <!-- $index is evaluated as \"0\", \"1\", etc. --> <div class=\"checkbox-inline\" ng-repeat=\"magus in cov.covenant.allMagi\"> <input ng-model=\"cov.selected[$index]\" id=\"{{magus}}\" type=\"checkbox\" name=\"{{magus}}\" value=\"\"><label for=\"{{magus}}\">{{magus}}</label> </div> <div class=\"btn btn-primary btn-small\" ng-click=\"cov.selectAll(true)\"> Select All </div> <div class=\"btn btn-primary btn-small\" ng-click=\"cov.selectAll(false)\"> Deselect All </div> <p> </p><div class=\"form-horizontal form-inline\"> <label for=\"startYear\">From </label> <input id=\"startYear\" type=\"number\" name=\"startYear\" min=\"1220\" max=\"1300\" required class=\"form-control\" ng-model=\"cov.startYear\"> <label for=\"endYear\">To </label> <input id=\"endYear\" type=\"number\" name=\"endYear\" min=\"1220\" max=\"1300\" required class=\"form-control\" ng-model=\"cov.endYear\"> <div class=\"btn btn-lg btn-success\" ng-click=\"cov.refreshGrid()\">Refresh</div> </div> <p></p> </div> </div>  <div> <div ui-grid=\"{ data: cov.seasons, enableSorting: false, columnDefs: cov.columnDefs, rowHeight: 66,\r" +
+    "<div class=\"row\"> <div class=\"col-md-6\"> <h2>Covenant of {{cov.covenant.name}}</h2> <p>{{cov.covenant.description}}</p> </div> <div class=\"col-md-6 form-group\"> <!-- cov.selected is an object, with a numerically named property for each selected item --> <!-- $index is evaluated as \"0\", \"1\", etc. --> <div class=\"checkbox-inline\" ng-repeat=\"magus in cov.covenant.members\"> <input ng-model=\"cov.selected[$index]\" id=\"{{magus}}\" type=\"checkbox\" name=\"{{magus}}\" value=\"\"><label for=\"{{magus}}\">{{magus}}</label> </div> <div class=\"btn btn-primary btn-small\" ng-click=\"cov.selectAll(true)\"> Select All </div> <div class=\"btn btn-primary btn-small\" ng-click=\"cov.selectAll(false)\"> Deselect All </div> <p> </p><div class=\"form-horizontal form-inline\"> <label for=\"startYear\">From </label> <input id=\"startYear\" type=\"number\" name=\"startYear\" min=\"1220\" max=\"1300\" required class=\"form-control\" ng-model=\"cov.startYear\"> <label for=\"endYear\">To </label> <input id=\"endYear\" type=\"number\" name=\"endYear\" min=\"1220\" max=\"1300\" required class=\"form-control\" ng-model=\"cov.endYear\"> <div class=\"btn btn-lg btn-success\" ng-click=\"cov.refreshGrid()\">Refresh</div> </div> <p></p> </div> </div>  <div> <div ui-grid=\"{ data: cov.seasons, enableSorting: false, columnDefs: cov.columnDefs, rowHeight: 66,\r" +
     "\n" +
     "        onRegisterApi: cov.apiRegister }\" ui-grid-resize-columns class=\"myGrid\" ui-grid-cellnav></div> </div>"
   );
 
 
   $templateCache.put('views/main.html',
-    "<div class=\"jumbotron\"> <h1>Select your covenant</h1> <p> <a class=\"btn btn-lg btn-success\" ng-href=\"#!/Foedus\" ng-click=\"hdr.setCovenant('Foedus')\">Foedus <span class=\"glyphicon glyphicon-ok\"></span></a> <a class=\"btn btn-lg btn-success\" ng-href=\"#!/Aoide\" ng-click=\"hdr.setCovenant('Aoide')\">Aoide <span class=\"glyphicon glyphicon-ok\"></span></a> </p> </div> "
+    "<div class=\"jumbotron\"> <h1>Select your covenant</h1> <p> <span ng-repeat=\"c in main.covenantList\"> <a class=\"btn btn-lg btn-success\" ng-href=\"#!/{{c}}\" ng-click=\"hdr.setCovenant(c)\">{{c}} <span class=\"glyphicon glyphicon-ok\"> </span></a>&nbsp;</span> </p> </div>"
   );
 
 
@@ -636,7 +768,7 @@ angular.module('amClientApp').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('templates/edit-modal.html',
-    "<div> <div class=\"modal-header\"> <button type=\"button\" class=\"close\" ng-click=\"vm.close()\"> <span aria-hidden=\"true\">&times;</span> </button> <h2 class=\"modal-title\"><strong>{{vm.magus}}</strong> : {{vm.season}} of {{vm.year}}</h2> </div> <div class=\"modal-body\"> <div class=\"form-group\"> <label for=\"detail\">Description </label> <textarea class=\"form-control\" rows=\"5\" id=\"detail\" ng-model=\"vm.data.description\"></textarea> </div> <div class=\"form-group\"> <div class=\"checkbox\"> <label><input type=\"checkbox\" id=\"isService\" ng-model=\"vm.data.isService\"> Covenant Service? </label> </div> <select class=\"form-control\" id=\"serviceFor\" ng-model=\"vm.data.serviceForMagus\"> <option></option> <option ng-repeat=\"magi in vm.covenant.allMagi | filter : '!' + vm.magus\">{{magi}}</option> </select> </div> </div> <div class=\"modal-footer\"> <button type=\"button\" class=\"btn btn-primary\" ng-click=\"vm.save()\">Save changes</button> <button type=\"button\" class=\"btn btn-secondary\" ng-click=\"vm.close()\">Close</button> </div> </div>"
+    "<div> <div class=\"modal-header\"> <button type=\"button\" class=\"close\" ng-click=\"vm.close()\"> <span aria-hidden=\"true\">&times;</span> </button> <h2 class=\"modal-title\"><strong>{{vm.magus}}</strong> : {{vm.season}} of {{vm.year}}</h2> </div> <div class=\"modal-body\"> <div class=\"form-group\"> <label for=\"detail\">Description </label> <textarea class=\"form-control\" rows=\"5\" id=\"detail\" ng-model=\"vm.data.description\"></textarea> </div> <div class=\"form-group\"> <div class=\"checkbox\"> <label><input type=\"checkbox\" id=\"isService\" ng-model=\"vm.data.isService\"> Covenant Service? </label> </div> <select class=\"form-control\" id=\"serviceFor\" ng-model=\"vm.data.serviceForMagus\"> <option></option> <option ng-repeat=\"magi in vm.covenant.members | filter : '!' + vm.magus\">{{magi}}</option> </select> </div> </div> <div class=\"modal-footer\"> <button type=\"button\" class=\"btn btn-primary\" ng-click=\"vm.save()\">Save changes</button> <button type=\"button\" class=\"btn btn-secondary\" ng-click=\"vm.close()\">Close</button> </div> </div>"
   );
 
 
